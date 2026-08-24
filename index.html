@@ -276,6 +276,8 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // --- 事業所設定：コピーごとにここだけ変更してください ---
 const CONFIG = {
@@ -531,15 +533,44 @@ $('copyBtn').addEventListener('click', async ()=>{
   }
 });
 
-$('pdfBtn').addEventListener('click', ()=>{
-  showToast('印刷画面が開きます。送信先で「PDFに保存」を選んでください 📄');
-  setTimeout(()=>{
-    try{
-      window.print();
-    }catch(e){
-      showToast('この環境ではPDF保存が利用できません');
+$('pdfBtn').addEventListener('click', async ()=>{
+  const btn = $('pdfBtn');
+  const dateStr = $('dateInput').value || todayStr();
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = '作成中…';
+  try{
+    if(typeof html2canvas === 'undefined' || !window.jspdf){
+      throw new Error('lib not loaded');
     }
-  }, 400);
+    const boardEl = $('board');
+    const canvas = await html2canvas(boardEl, {
+      backgroundColor: '#0D3934',
+      scale: 3,
+      useCORS: true
+    });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pageW = 160;
+    const pageH = pageW * (canvas.height / canvas.width);
+    const pdf = new jsPDF({
+      orientation: pageH > pageW ? 'portrait' : 'landscape',
+      unit: 'mm',
+      format: [pageW, pageH]
+    });
+    pdf.addImage(imgData, 'PNG', 0, 0, pageW, pageH);
+    pdf.save(`稼働率ボード_${dateStr}.pdf`);
+    showToast('PDFを保存しました 📄');
+  }catch(e){
+    // フォールバック：ブラウザ標準の印刷機能
+    showToast('印刷画面を開きます。「PDFに保存」を選んでください 📄');
+    setTimeout(()=>{
+      try{ window.print(); }catch(err){ showToast('この環境ではPDF保存が利用できません'); }
+    }, 300);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 });
 
 let lastMonthlySummary = null;
