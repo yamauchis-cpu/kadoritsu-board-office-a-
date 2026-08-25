@@ -408,6 +408,7 @@ function pctColor(pct){
 }
 
 let currentPct = 0;
+let saveTimer = null;
 
 function update(){
   const dateStr = $('dateInput').value || todayStr();
@@ -459,7 +460,6 @@ function update(){
 update();
 
 // --- 個人メモとして保存（チーム共有はしない）／先週同曜日との比較 ---
-let saveTimer = null;
 function scheduleSave(dateStr, entry){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
