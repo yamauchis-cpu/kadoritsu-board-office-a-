@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>本日の稼働率ボード｜事業所A</title>
+<title>本日の稼働率ボード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -36,7 +36,12 @@
     border-radius:50%; background:rgba(255,255,255,0.06);
   }
   .eyebrow{font-size:11px; letter-spacing:.14em; opacity:.75; font-weight:500;}
-  h1{font-family:'Zen Maru Gothic', sans-serif; font-weight:900; font-size:21px; margin:4px 0 14px;}
+  h1{font-family:'Zen Maru Gothic', sans-serif; font-weight:900; font-size:19px; margin:2px 0 0;}
+  .header-top{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .logo{
+    width:46px; height:46px; border-radius:12px; background:#fff; padding:4px;
+    object-fit:contain; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  }
   .date-row input[type=date]{
     background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.35);
     color:#fff; border-radius:10px; padding:8px 10px; font-family:'JetBrains Mono',monospace; font-size:14px;
@@ -89,7 +94,7 @@
   .gauge-target::after{content:"目標70%"; position:absolute; top:-16px; right:-24px; font-size:9.5px; font-weight:700; opacity:.8; white-space:nowrap;}
   .status-badge{display:inline-block; margin-top:10px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700;}
   .compare-row{
-    position:relative; margin-top:12px; padding:9px 12px; background:rgba(255,255,255,0.08);
+    position:relative; margin-top:12px; margin-bottom:16px; padding:9px 12px; background:rgba(255,255,255,0.08);
     border-radius:10px; font-size:12.5px; line-height:1.6; display:flex; align-items:center;
     justify-content:space-between; gap:8px; flex-wrap:wrap;
   }
@@ -143,8 +148,13 @@
 <body>
 <div class="app">
   <header>
-    <div class="eyebrow" id="officeEyebrow">訪問看護ステーション ・ 稼働率ボード</div>
-    <h1>就業前チェック、いきましょう</h1>
+    <div class="header-top">
+      <img src="logo.png" alt="ロゴ" class="logo">
+      <div>
+        <div class="eyebrow" id="officeEyebrow">訪問看護ステーション ・ 稼働率ボード</div>
+        <h1>就業前チェック、いきましょう</h1>
+      </div>
+    </div>
     <div class="date-row">
       <input type="date" id="dateInput">
       <span class="date-label" id="dateLabel"></span>
@@ -281,9 +291,10 @@
 <script>
 // --- 事業所設定：コピーごとにここだけ変更してください ---
 const CONFIG = {
-  officeName: '事業所A'
+  officeName: 'デイジー読谷',                    // ボード・PDF・LINE投稿で使う短い名称
+  fullName: '訪問看護ステーション デイジー読谷'   // ヘッダーで使う正式名称
 };
-document.title = document.title.replace(/事業所A/, CONFIG.officeName);
+document.title = `本日の稼働率ボード｜${CONFIG.officeName}`;
 
 // --- ストレージ層 ---
 // 1. まず Netlify Functions（共有バックエンド／複数端末で共有）を試す
@@ -379,7 +390,7 @@ function addDays(dateStr, delta){
   const dd = String(dt.getDate()).padStart(2,'0');
   return `${yyyy}-${mm}-${dd}`;
 }
-$('officeEyebrow').textContent = `訪問看護ステーション ・ ${CONFIG.officeName} ・ 稼働率ボード`;
+$('officeEyebrow').textContent = `${CONFIG.fullName} ・ 稼働率ボード`;
 $('dateInput').value = todayStr();
 
 document.querySelectorAll('.stepper button').forEach(btn=>{
@@ -543,6 +554,11 @@ $('pdfBtn').addEventListener('click', async ()=>{
     if(typeof html2canvas === 'undefined' || !window.jspdf){
       throw new Error('lib not loaded');
     }
+    // Webフォントの読み込み完了を待ってから撮影する（先週比較の文字が数字と重なるのを防ぐ）
+    if(document.fonts && document.fonts.ready){
+      await document.fonts.ready;
+    }
+    await new Promise(r => setTimeout(r, 50));
     const boardEl = $('board');
     const canvas = await html2canvas(boardEl, {
       backgroundColor: '#0D3934',
